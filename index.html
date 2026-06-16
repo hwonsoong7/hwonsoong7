@@ -1,0 +1,1294 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>레전드 오브 픽셀 - 모험의 시작</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Retro Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Silkscreen&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #0d0d13;
+        }
+        .retro-font {
+            font-family: 'Silkscreen', 'Press Start 2P', cursive;
+        }
+        /* 가상 패드 터치 방지 */
+        .no-select {
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        /* 스크롤바 숨기기 */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #111827;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4b5563;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body class="text-gray-100 flex flex-col min-h-screen overflow-x-hidden no-select">
+
+    <!-- 헤더 / 네비게이션 -->
+    <header class="bg-gray-900 border-b-4 border-yellow-600 p-4 shadow-lg">
+        <div class="max-w-6xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <span class="text-3xl">⚔️</span>
+                <div>
+                    <h1 class="text-2xl font-bold retro-font text-yellow-500 tracking-wider">PIXEL DUNGEON</h1>
+                    <p class="text-xs text-gray-400">레트로 액션 판타지 RPG</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <!-- BGM 컨트롤러 -->
+                <button id="bgmToggleBtn" class="bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg border-2 border-gray-600 transition flex items-center gap-2 text-sm">
+                    <i id="bgmIcon" class="fas fa-volume-mute text-red-500"></i>
+                    <span id="bgmText">배경음 켜기</span>
+                </button>
+                <div class="bg-gray-800 px-4 py-2 rounded-lg border border-yellow-600 text-sm">
+                    <span class="text-yellow-400 font-bold">도움말:</span> WASD/방향키 이동, <kbd class="bg-gray-900 px-1 py-0.5 rounded text-white text-xs border border-gray-600">SPACE</kbd> 공격
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 메인 게임 영역 -->
+    <main class="flex-grow max-w-6xl w-full mx-auto p-4 grid grid-cols-1 lg:grid-cols-4 gap-6">
+        
+        <!-- 왼쪽 사이드바: 캐릭터 능력치 & 인벤토리 -->
+        <div class="lg:col-span-1 flex flex-col gap-4">
+            <!-- 영웅 카드 -->
+            <div class="bg-gray-900 border-2 border-gray-700 rounded-xl p-4 shadow-md">
+                <div class="flex items-center gap-3 mb-4 border-b border-gray-800 pb-3">
+                    <div class="text-4xl p-2 bg-yellow-900/40 rounded-lg border border-yellow-600/50">🛡️</div>
+                    <div>
+                        <h2 class="font-bold text-lg text-yellow-400 retro-font" id="uiPlayerName">HERO</h2>
+                        <span class="text-xs bg-yellow-600/30 text-yellow-300 px-2 py-0.5 rounded-full font-semibold">Lv.<span id="uiLevel">1</span> 모험가</span>
+                    </div>
+                </div>
+
+                <!-- 능력치 스탯 -->
+                <div class="space-y-3">
+                    <div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span>체력 (HP)</span>
+                            <span class="font-bold text-red-400"><span id="uiCurrentHp">100</span> / <span id="uiMaxHp">100</span></span>
+                        </div>
+                        <div class="w-full bg-gray-800 rounded-full h-3 overflow-hidden border border-gray-700">
+                            <div id="uiHpBar" class="bg-red-600 h-full transition-all duration-150" style="width: 100%;"></div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span>경험치 (EXP)</span>
+                            <span class="font-bold text-blue-400"><span id="uiCurrentExp">0</span> / <span id="uiNextExp">100</span></span>
+                        </div>
+                        <div class="w-full bg-gray-800 rounded-full h-3 overflow-hidden border border-gray-700">
+                            <div id="uiExpBar" class="bg-blue-500 h-full transition-all" style="width: 0%;"></div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2 pt-2 text-sm">
+                        <div class="bg-gray-800/50 p-2 rounded border border-gray-800 flex items-center justify-between">
+                            <span class="text-gray-400">공격력:</span>
+                            <span class="font-bold text-red-400" id="uiAtk">15</span>
+                        </div>
+                        <div class="bg-gray-800/50 p-2 rounded border border-gray-800 flex items-center justify-between">
+                            <span class="text-gray-400">방어력:</span>
+                            <span class="font-bold text-green-400" id="uiDef">5</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-yellow-950/20 border border-yellow-700/50 p-3 rounded-lg flex justify-between items-center mt-2">
+                        <span class="text-yellow-500 font-semibold flex items-center gap-1">
+                            <i class="fas fa-coins"></i> 소지 골드
+                        </span>
+                        <span class="text-xl font-bold text-yellow-400 retro-font" id="uiGold">100</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 퀘스트 진행도 -->
+            <div class="bg-gray-900 border-2 border-gray-700 rounded-xl p-4 shadow-md">
+                <h3 class="font-bold text-yellow-500 mb-2 flex items-center gap-2 text-sm border-b border-gray-800 pb-2">
+                    <i class="fas fa-scroll"></i> 활성화된 퀘스트
+                </h3>
+                <div id="questContainer" class="text-sm">
+                    <p class="font-bold text-yellow-400" id="questTitle">촌장의 첫 의뢰</p>
+                    <p class="text-gray-400 text-xs mt-1" id="questDesc">마을 주변을 어슬렁거리는 슬라임을 사냥하고 촌장에게 가보세요.</p>
+                    <div class="flex justify-between items-center mt-3 bg-gray-800 p-2 rounded border border-gray-700">
+                        <span class="text-xs" id="questProgressText">슬라임 사냥: 0 / 3</span>
+                        <span id="questStatusBadge" class="text-[10px] px-2 py-0.5 rounded bg-red-900/50 text-red-300 font-bold">진행 중</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 인벤토리 & 포션 -->
+            <div class="bg-gray-900 border-2 border-gray-700 rounded-xl p-4 shadow-md">
+                <h3 class="font-bold text-blue-400 mb-3 flex items-center gap-2 text-sm">
+                    <i class="fas fa-briefcase"></i> 인벤토리 및 퀵슬롯
+                </h3>
+                <div class="grid grid-cols-3 gap-2 text-center">
+                    <button id="potionUseBtn" class="bg-red-950/30 hover:bg-red-900/40 border border-red-700/60 rounded-lg p-2 transition flex flex-col items-center justify-center gap-1">
+                        <span class="text-2xl">🧪</span>
+                        <span class="text-xs text-gray-300 font-semibold">회복 포션</span>
+                        <span class="text-[10px] bg-red-600/80 text-white px-1.5 py-0.5 rounded-full" id="uiPotionCount">3개</span>
+                    </button>
+                    <div class="bg-gray-800/40 border border-gray-700/60 rounded-lg p-2 flex flex-col items-center justify-center gap-1 opacity-75">
+                        <span class="text-2xl" id="uiEquipSwordIcon">🗡️</span>
+                        <span class="text-[10px] text-gray-400 font-semibold" id="uiEquipSwordName">기본 검</span>
+                    </div>
+                    <div class="bg-gray-800/40 border border-gray-700/60 rounded-lg p-2 flex flex-col items-center justify-center gap-1 opacity-75">
+                        <span class="text-2xl" id="uiEquipArmorIcon">👕</span>
+                        <span class="text-[10px] text-gray-400 font-semibold" id="uiEquipArmorName">가죽 옷</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 중간: 게임 플레이 캔버스 및 미니콘솔 -->
+        <div class="lg:col-span-2 flex flex-col gap-4">
+            <!-- 캔버스 컨테이너 -->
+            <div class="relative bg-gray-950 border-4 border-yellow-600 rounded-2xl overflow-hidden shadow-2xl flex items-center justify-center">
+                <!-- 게임 시작/정지/사망 등 오버레이 화면 -->
+                <div id="gameOverlay" class="absolute inset-0 bg-black/80 flex flex-col items-center justify-center text-center p-6 z-10">
+                    <div class="space-y-6 max-w-md">
+                        <div class="text-5xl animate-bounce">🗡️👑⚔️</div>
+                        <h2 class="text-3xl font-extrabold retro-font text-yellow-400 tracking-widest" id="overlayTitle">레전드 오브 픽셀</h2>
+                        <p class="text-gray-300 text-sm" id="overlayDesc">
+                            마을을 수호하고 던전 깊숙한 곳의 드래곤을 격퇴하세요!<br>몬스터를 처치하여 성장하고 최강의 무기를 구비하세요.
+                        </p>
+                        <button id="startGameBtn" class="bg-yellow-500 hover:bg-yellow-400 text-gray-900 font-extrabold text-lg px-8 py-4 rounded-xl border-b-4 border-yellow-700 shadow-lg transform active:scale-95 transition-all w-full retro-font">
+                            게임 시작하기
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 캔버스 엘리먼트 -->
+                <canvas id="gameCanvas" width="560" height="420" class="block w-full max-w-full aspect-[4/3] bg-[#223322]"></canvas>
+            </div>
+
+            <!-- 전투 로그 / 메세지 바 -->
+            <div class="bg-gray-900 border-2 border-gray-700 rounded-xl p-3 h-28 flex flex-col">
+                <span class="text-xs text-yellow-500 font-bold mb-1 border-b border-gray-800 pb-1">📜 모험 보고서</span>
+                <div id="combatLog" class="overflow-y-auto text-xs text-gray-300 flex-grow space-y-1 font-mono">
+                    <p class="text-yellow-400">[시스템] 픽셀 월드에 오신 것을 환영합니다! 마을의 촌장에게 대화해보세요.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 오른쪽 사이드바: 상점 및 촌장 상호작용 -->
+        <div class="lg:col-span-1 flex flex-col gap-4">
+            <!-- 무기점/상점 -->
+            <div class="bg-gray-900 border-2 border-gray-700 rounded-xl p-4 shadow-md flex-grow flex flex-col">
+                <h3 class="font-bold text-yellow-500 mb-3 flex items-center gap-2 text-sm border-b border-gray-800 pb-2">
+                    <i class="fas fa-store text-yellow-500"></i> 마을 무기 상점
+                </h3>
+                
+                <div class="space-y-3 flex-grow overflow-y-auto pr-1">
+                    <!-- 아이템 1: 검 업그레이드 -->
+                    <div class="bg-gray-800/60 p-2.5 rounded-lg border border-gray-700 flex flex-col gap-2">
+                        <div class="flex justify-between items-center">
+                            <span class="font-bold text-sm text-yellow-100 flex items-center gap-1">⚔️ 강철 장검</span>
+                            <span class="text-xs text-yellow-400 font-semibold"><i class="fas fa-coins"></i> 150G</span>
+                        </div>
+                        <p class="text-[11px] text-gray-400">공격력이 대폭 상승합니다. (+12 ATK)</p>
+                        <button onclick="game.buyItem('sword')" id="shopBuySword" class="w-full bg-yellow-600 hover:bg-yellow-500 disabled:bg-gray-700 disabled:text-gray-400 text-gray-900 text-xs font-bold py-1.5 px-3 rounded transition">
+                            구매하기
+                        </button>
+                    </div>
+
+                    <!-- 아이템 2: 갑옷 업그레이드 -->
+                    <div class="bg-gray-800/60 p-2.5 rounded-lg border border-gray-700 flex flex-col gap-2">
+                        <div class="flex justify-between items-center">
+                            <span class="font-bold text-sm text-yellow-100 flex items-center gap-1">🛡️ 기사의 철갑</span>
+                            <span class="text-xs text-yellow-400 font-semibold"><i class="fas fa-coins"></i> 150G</span>
+                        </div>
+                        <p class="text-[11px] text-gray-400">방어력이 단단해져 받는 피해가 감소합니다. (+8 DEF)</p>
+                        <button onclick="game.buyItem('armor')" id="shopBuyArmor" class="w-full bg-yellow-600 hover:bg-yellow-500 disabled:bg-gray-700 disabled:text-gray-400 text-gray-900 text-xs font-bold py-1.5 px-3 rounded transition">
+                            구매하기
+                        </button>
+                    </div>
+
+                    <!-- 아이템 3: 체력 포션 구매 -->
+                    <div class="bg-gray-800/60 p-2.5 rounded-lg border border-gray-700 flex flex-col gap-2">
+                        <div class="flex justify-between items-center">
+                            <span class="font-bold text-sm text-yellow-100 flex items-center gap-1">🧪 회복 물약</span>
+                            <span class="text-xs text-yellow-400 font-semibold"><i class="fas fa-coins"></i> 30G</span>
+                        </div>
+                        <p class="text-[11px] text-gray-400">마시면 체력을 50만큼 빠르게 회복시킵니다.</p>
+                        <button onclick="game.buyItem('potion')" class="w-full bg-red-800 hover:bg-red-700 text-white text-xs font-bold py-1.5 px-3 rounded transition">
+                            구매하기
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 치트키 보너스 골드 버튼 (사용자 재미 배가) -->
+                <button onclick="game.cheatGold()" class="mt-4 bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-yellow-400 text-[10px] py-1 border border-dashed border-gray-600 rounded text-center transition">
+                    💡 골드가 부족하다면? (지원금 +100G)
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- 모바일 컨트롤 (모바일 환경 가독성 및 조작성 확보) -->
+    <div class="lg:hidden w-full bg-gray-900 border-t border-gray-800 p-4 flex justify-around items-center gap-4">
+        <!-- 방향키 패드 -->
+        <div class="grid grid-cols-3 gap-2 w-32 h-32 select-none">
+            <div></div>
+            <button id="btnUp" class="bg-gray-800 active:bg-yellow-600 rounded-xl flex items-center justify-center border border-gray-700 shadow text-xl">▲</button>
+            <div></div>
+            <button id="btnLeft" class="bg-gray-800 active:bg-yellow-600 rounded-xl flex items-center justify-center border border-gray-700 shadow text-xl">◀</button>
+            <div class="bg-gray-950 rounded-full border border-gray-800 flex items-center justify-center text-xs text-gray-500 font-bold">PAD</div>
+            <button id="btnRight" class="bg-gray-800 active:bg-yellow-600 rounded-xl flex items-center justify-center border border-gray-700 shadow text-xl">▶</button>
+            <div></div>
+            <button id="btnDown" class="bg-gray-800 active:bg-yellow-600 rounded-xl flex items-center justify-center border border-gray-700 shadow text-xl">▼</button>
+            <div></div>
+        </div>
+        <!-- 액션 버튼 -->
+        <div class="flex flex-col gap-2 select-none">
+            <button id="btnAttack" class="w-24 h-24 bg-red-700 active:bg-red-500 rounded-full border-4 border-red-900 shadow-lg flex flex-col items-center justify-center gap-1 transform active:scale-90 transition-all">
+                <span class="text-3xl">⚔️</span>
+                <span class="text-[10px] font-bold text-white tracking-widest">공격 (SPACE)</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 푸터 -->
+    <footer class="bg-gray-950 text-gray-500 text-xs py-4 text-center border-t border-gray-900 mt-auto">
+        <p>&copy; 2026 Pixel Dungeon RPG. All Rights Reserved. Emojis by Unicode.</p>
+    </footer>
+
+    <script>
+        /* =======================================================
+         * 1. 오디오 소리 엔진 (Web Audio API 사용, 외부 에셋 의존 無)
+         * ======================================================= */
+        class SoundEngine {
+            constructor() {
+                this.ctx = null;
+                this.muted = true;
+                this.bgmInterval = null;
+                this.bgmSequence = [
+                    261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25 // Do Re Mi Fa Sol La Si Do
+                ];
+                this.bgmStep = 0;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            }
+
+            toggleMute() {
+                this.init();
+                this.muted = !this.muted;
+                if (this.muted) {
+                    this.stopBgm();
+                } else {
+                    this.startBgm();
+                }
+                return this.muted;
+            }
+
+            playHit() {
+                if (this.muted || !this.ctx) return;
+                // Noise hit sound
+                let osc = this.ctx.createOscillator();
+                let gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(10, this.ctx.currentTime + 0.15);
+                gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.15);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.15);
+            }
+
+            playAttack() {
+                if (this.muted || !this.ctx) return;
+                let osc = this.ctx.createOscillator();
+                let gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(400, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(800, this.ctx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.1);
+            }
+
+            playPotion() {
+                if (this.muted || !this.ctx) return;
+                let osc = this.ctx.createOscillator();
+                let gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(200, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(1200, this.ctx.currentTime + 0.4);
+                gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.4);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.4);
+            }
+
+            playLevelUp() {
+                if (this.muted || !this.ctx) return;
+                const now = this.ctx.currentTime;
+                const notes = [261.63, 329.63, 392.00, 523.25, 659.25, 783.99, 1046.50];
+                notes.forEach((freq, idx) => {
+                    let osc = this.ctx.createOscillator();
+                    let gain = this.ctx.createGain();
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+                    gain.gain.setValueAtTime(0.15, now + idx * 0.08);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.08 + 0.2);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + idx * 0.08);
+                    osc.stop(now + idx * 0.08 + 0.2);
+                });
+            }
+
+            playQuestDone() {
+                if (this.muted || !this.ctx) return;
+                const now = this.ctx.currentTime;
+                const notes = [440.00, 493.88, 523.25, 587.33, 659.25];
+                notes.forEach((freq, idx) => {
+                    let osc = this.ctx.createOscillator();
+                    let gain = this.ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.1);
+                    gain.gain.setValueAtTime(0.2, now + idx * 0.1);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.1 + 0.3);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + idx * 0.1);
+                    osc.stop(now + idx * 0.1 + 0.3);
+                });
+            }
+
+            playGameOver() {
+                if (this.muted || !this.ctx) return;
+                const now = this.ctx.currentTime;
+                const notes = [293.66, 277.18, 261.63, 246.94];
+                notes.forEach((freq, idx) => {
+                    let osc = this.ctx.createOscillator();
+                    let gain = this.ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.25);
+                    gain.gain.setValueAtTime(0.2, now + idx * 0.25);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.25 + 0.4);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + idx * 0.25);
+                    osc.stop(now + idx * 0.25 + 0.4);
+                });
+            }
+
+            startBgm() {
+                if (this.bgmInterval) clearInterval(this.bgmInterval);
+                this.bgmInterval = setInterval(() => {
+                    if (this.muted || !this.ctx) return;
+                    let osc = this.ctx.createOscillator();
+                    let gain = this.ctx.createGain();
+                    osc.type = 'triangle';
+                    
+                    // Simple pentatonic walking bass for fantasy feeling
+                    let melody = [130.81, 146.83, 164.81, 196.00, 220.00]; // Low C, D, E, G, A
+                    let freq = melody[this.bgmStep % melody.length];
+                    
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                    gain.gain.setValueAtTime(0.04, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.38);
+                    
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + 0.4);
+                    
+                    this.bgmStep++;
+                }, 400); // 150 BPM
+            }
+
+            stopBgm() {
+                if (this.bgmInterval) {
+                    clearInterval(this.bgmInterval);
+                    this.bgmInterval = null;
+                }
+            }
+        }
+
+        const sound = new SoundEngine();
+
+        // BGM 버튼 제어
+        document.getElementById('bgmToggleBtn').addEventListener('click', () => {
+            const isMuted = sound.toggleMute();
+            const icon = document.getElementById('bgmIcon');
+            const text = document.getElementById('bgmText');
+            if (isMuted) {
+                icon.className = "fas fa-volume-mute text-red-500";
+                text.textContent = "배경음 켜기";
+            } else {
+                icon.className = "fas fa-volume-up text-green-500 animate-pulse";
+                text.textContent = "배경음 끄기";
+            }
+        });
+
+        /* =======================================================
+         * STREAMING_CHUNK: Formulating player, NPC, and Enemy data...
+         * ======================================================= */
+        // 전역 설정 & 상수
+        const WORLD_WIDTH = 1200;
+        const WORLD_HEIGHT = 800;
+        const VIEWPORT_WIDTH = 560;
+        const VIEWPORT_HEIGHT = 420;
+
+        // 게임 클래스 정의
+        class Game {
+            constructor() {
+                this.canvas = document.getElementById('gameCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.player = {
+                    x: 100,
+                    y: 150,
+                    width: 32,
+                    height: 32,
+                    speed: 4,
+                    level: 1,
+                    hp: 100,
+                    maxHp: 100,
+                    exp: 0,
+                    nextExp: 100,
+                    atk: 15,
+                    def: 5,
+                    gold: 100,
+                    potions: 3,
+                    direction: 'down',
+                    isAttacking: false,
+                    attackCooldown: 0,
+                    weaponUpgrade: 0,
+                    armorUpgrade: 0
+                };
+
+                this.keys = {};
+                this.monsters = [];
+                this.particles = [];
+                this.damageTexts = [];
+                this.npcs = [
+                    { x: 120, y: 120, type: 'elder', emoji: '🧙‍♂️', name: '촌장', width: 32, height: 32 },
+                    { x: 300, y: 100, type: 'merchant_sign', emoji: '🛒', name: '상인', width: 32, height: 32 }
+                ];
+                
+                // 장식물 (나무 🌲, 바위 🪨)
+                this.decorations = [];
+                
+                // 퀘스트 상태
+                this.quest = {
+                    id: 'hunt_slime',
+                    title: '촌장의 첫 의뢰',
+                    desc: '마을 주변을 어슬렁거리는 슬라임을 사냥하고 촌장에게 가보세요.',
+                    target: 'slime',
+                    count: 0,
+                    targetCount: 3,
+                    completed: false,
+                    rewarded: false,
+                    rewardGold: 100,
+                    rewardExp: 50
+                };
+
+                this.gameState = 'menu'; // 'menu', 'playing', 'gameover', 'victory'
+                this.initDecorations();
+                this.spawnMonsters();
+                this.setupInputs();
+            }
+
+            initDecorations() {
+                // 울타리와 나무로 자연스러운 지형 경계 생성
+                for (let i = 0; i < 40; i++) {
+                    // 무작위 나무 배치 (안전지대/사냥터 구분)
+                    this.decorations.push({
+                        x: Math.random() * (WORLD_WIDTH - 200) + 150,
+                        y: Math.random() * (WORLD_HEIGHT - 100) + 50,
+                        emoji: Math.random() > 0.3 ? '🌲' : '🪨',
+                        width: 36,
+                        height: 36
+                    });
+                }
+                // 안전지대 구분 펜스 효과 (마을 경계)
+                for (let y = 0; y < WORLD_HEIGHT; y += 40) {
+                    if (y < 80 || y > 240) { // 출구만 뚫어둠
+                        this.decorations.push({ x: 380, y: y, emoji: '🪵', width: 30, height: 30 });
+                    }
+                }
+            }
+
+            spawnMonsters() {
+                this.monsters = [];
+                // 슬라임 (레벨 1 사냥터)
+                for (let i = 0; i < 6; i++) {
+                    this.spawnMonster('slime');
+                }
+                // 고블린 (레벨 2 사냥터)
+                for (let i = 0; i < 4; i++) {
+                    this.spawnMonster('goblin');
+                }
+                // 오크 (레벨 3 사냥터)
+                for (let i = 0; i < 3; i++) {
+                    this.spawnMonster('orc');
+                }
+                // 드래곤 보스 (맵 가장 깊은 구석: 1100, 700 근처)
+                this.monsters.push({
+                    x: 1050,
+                    y: 650,
+                    width: 70,
+                    height: 70,
+                    type: 'dragon',
+                    emoji: '🐉',
+                    name: '붉은거룡(BOSS)',
+                    hp: 500,
+                    maxHp: 500,
+                    atk: 35,
+                    def: 15,
+                    speed: 1.5,
+                    exp: 500,
+                    gold: 1000,
+                    aiTimer: 0,
+                    targetX: 1050,
+                    targetY: 650
+                });
+            }
+
+            spawnMonster(type) {
+                let rx, ry, emoji, name, hp, atk, def, speed, gold, exp, size = 32;
+                if (type === 'slime') {
+                    // 슬라임은 주로 맵 중간 영역
+                    rx = Math.random() * 400 + 400;
+                    ry = Math.random() * 600 + 100;
+                    emoji = '🟢';
+                    name = '슬라임';
+                    hp = 40;
+                    atk = 8;
+                    def = 2;
+                    speed = 1.2;
+                    gold = 15;
+                    exp = 15;
+                } else if (type === 'goblin') {
+                    // 고블린은 맵 우상단 영역
+                    rx = Math.random() * 400 + 750;
+                    ry = Math.random() * 300 + 50;
+                    emoji = '👺';
+                    name = '고블린';
+                    hp = 80;
+                    atk = 18;
+                    def = 4;
+                    speed = 2.0;
+                    gold = 35;
+                    exp = 30;
+                } else if (type === 'orc') {
+                    // 오크는 맵 우하단 영역
+                    rx = Math.random() * 400 + 750;
+                    ry = Math.random() * 300 + 450;
+                    emoji = '🐗';
+                    name = '난폭한 오크';
+                    hp = 150;
+                    atk = 26;
+                    def = 8;
+                    speed = 1.6;
+                    gold = 70;
+                    exp = 65;
+                    size = 40;
+                }
+
+                this.monsters.push({
+                    x: rx,
+                    y: ry,
+                    width: size,
+                    height: size,
+                    type: type,
+                    emoji: emoji,
+                    name: name,
+                    hp: hp,
+                    maxHp: hp,
+                    atk: atk,
+                    def: def,
+                    speed: speed,
+                    exp: exp,
+                    gold: gold,
+                    aiTimer: 0,
+                    targetX: rx,
+                    targetY: ry
+                });
+            }
+
+            setupInputs() {
+                // 키보드 리스너
+                window.addEventListener('keydown', (e) => {
+                    this.keys[e.code] = true;
+                    
+                    // 방향키, 스페이스바, WASD 입력 시 브라우저 화면이 스크롤되는 현상을 완벽히 방지합니다.
+                    if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyW', 'KeyA', 'KeyS', 'KeyD'].includes(e.code)) {
+                        e.preventDefault();
+                    }
+                    
+                    if (e.code === 'Space') {
+                        this.triggerAttack();
+                    }
+                });
+                window.addEventListener('keyup', (e) => {
+                    this.keys[e.code] = false;
+                });
+
+                // 모바일 터치 패드 리스너
+                const bindTouchBtn = (id, code) => {
+                    const btn = document.getElementById(id);
+                    btn.addEventListener('mousedown', () => { this.keys[code] = true; });
+                    btn.addEventListener('mouseup', () => { this.keys[code] = false; });
+                    btn.addEventListener('touchstart', (e) => { e.preventDefault(); this.keys[code] = true; });
+                    btn.addEventListener('touchend', (e) => { e.preventDefault(); this.keys[code] = false; });
+                };
+
+                bindTouchBtn('btnUp', 'ArrowUp');
+                bindTouchBtn('btnDown', 'ArrowDown');
+                bindTouchBtn('btnLeft', 'ArrowLeft');
+                bindTouchBtn('btnRight', 'ArrowRight');
+
+                const btnAttack = document.getElementById('btnAttack');
+                btnAttack.addEventListener('touchstart', (e) => { e.preventDefault(); this.triggerAttack(); });
+                btnAttack.addEventListener('mousedown', () => { this.triggerAttack(); });
+
+                // 포션 퀵슬롯 리스너
+                document.getElementById('potionUseBtn').addEventListener('click', () => {
+                    this.usePotion();
+                });
+            }
+
+            triggerAttack() {
+                if (this.gameState !== 'playing') return;
+                if (this.player.attackCooldown <= 0) {
+                    this.player.isAttacking = true;
+                    this.player.attackCooldown = 15; // 0.25초 쿨타임
+                    sound.playAttack();
+                    this.checkAttackCollision();
+                }
+            }
+
+            usePotion() {
+                if (this.player.potions > 0 && this.player.hp < this.player.maxHp) {
+                    this.player.potions--;
+                    this.player.hp = Math.min(this.player.maxHp, this.player.hp + 50);
+                    sound.playPotion();
+                    this.logCombat(`🧪 체력 포션을 마셨습니다! 체력이 50만큼 회복되었습니다.`);
+                    this.addParticle(this.player.x + 16, this.player.y + 16, '💚', 8);
+                    this.updateUI();
+                } else if (this.player.potions <= 0) {
+                    this.logCombat(`❌ 남은 체력 포션이 없습니다! 마을 상점에서 구매하세요.`);
+                }
+            }
+
+            buyItem(type) {
+                if (type === 'sword') {
+                    if (this.player.gold >= 150 && this.player.weaponUpgrade === 0) {
+                        this.player.gold -= 150;
+                        this.player.weaponUpgrade = 1;
+                        this.player.atk += 12;
+                        document.getElementById('shopBuySword').disabled = true;
+                        document.getElementById('shopBuySword').textContent = "보유 중";
+                        document.getElementById('uiEquipSwordIcon').textContent = "🗡️✨";
+                        document.getElementById('uiEquipSwordName').textContent = "강철 장검";
+                        this.logCombat(`⚔️ [상점] 강철 장검을 구매해 장착했습니다! (공격력 +12)`);
+                        this.updateUI();
+                    } else if (this.player.gold < 150) {
+                        this.logCombat(`❌ 골드가 부족합니다!`);
+                    }
+                } else if (type === 'armor') {
+                    if (this.player.gold >= 150 && this.player.armorUpgrade === 0) {
+                        this.player.gold -= 150;
+                        this.player.armorUpgrade = 1;
+                        this.player.def += 8;
+                        document.getElementById('shopBuyArmor').disabled = true;
+                        document.getElementById('shopBuyArmor').textContent = "보유 중";
+                        document.getElementById('uiEquipArmorIcon').textContent = "🛡️✨";
+                        document.getElementById('uiEquipArmorName').textContent = "철제 갑옷";
+                        this.logCombat(`🛡️ [상점] 기사의 철갑을 구매해 장착했습니다! (방어력 +8)`);
+                        this.updateUI();
+                    } else if (this.player.gold < 150) {
+                        this.logCombat(`❌ 골드가 부족합니다!`);
+                    }
+                } else if (type === 'potion') {
+                    if (this.player.gold >= 30) {
+                        this.player.gold -= 30;
+                        this.player.potions++;
+                        this.logCombat(`🧪 [상점] 포션을 구매했습니다.`);
+                        this.updateUI();
+                    } else {
+                        this.logCombat(`❌ 골드가 부족합니다!`);
+                    }
+                }
+            }
+
+            cheatGold() {
+                this.player.gold += 100;
+                this.logCombat(`💰 [개발자 지원금] 100G가 자비롭게 지급되었습니다.`);
+                this.updateUI();
+            }
+
+            logCombat(msg) {
+                const logBox = document.getElementById('combatLog');
+                const p = document.createElement('p');
+                p.textContent = msg;
+                logBox.appendChild(p);
+                logBox.scrollTop = logBox.scrollHeight;
+            }
+
+            updateUI() {
+                document.getElementById('uiLevel').textContent = this.player.level;
+                document.getElementById('uiCurrentHp').textContent = Math.round(this.player.hp);
+                document.getElementById('uiMaxHp').textContent = this.player.maxHp;
+                document.getElementById('uiCurrentExp').textContent = this.player.exp;
+                document.getElementById('uiNextExp').textContent = this.player.nextExp;
+                document.getElementById('uiAtk').textContent = this.player.atk;
+                document.getElementById('uiDef').textContent = this.player.def;
+                document.getElementById('uiGold').textContent = this.player.gold;
+                document.getElementById('uiPotionCount').textContent = `${this.player.potions}개`;
+
+                // Hp & Exp Bars
+                const hpPercent = Math.max(0, (this.player.hp / this.player.maxHp) * 100);
+                const expPercent = Math.min(100, (this.player.exp / this.player.nextExp) * 100);
+                document.getElementById('uiHpBar').style.width = `${hpPercent}%`;
+                document.getElementById('uiExpBar').style.width = `${expPercent}%`;
+
+                // 퀘스트 UI 업데이트
+                const questProgressText = document.getElementById('questProgressText');
+                const questStatusBadge = document.getElementById('questStatusBadge');
+                
+                if (this.quest.id === 'hunt_slime') {
+                    questProgressText.textContent = `슬라임 처치: ${this.quest.count} / ${this.quest.targetCount}`;
+                    if (this.quest.completed) {
+                        questStatusBadge.textContent = "촌장과 대화";
+                        questStatusBadge.className = "text-[10px] px-2 py-0.5 rounded bg-yellow-900/60 text-yellow-300 font-bold animate-pulse";
+                    }
+                } else if (this.quest.id === 'defeat_dragon') {
+                    questProgressText.textContent = `드래곤 격퇴: ${this.quest.completed ? '완료' : '진행 중'}`;
+                    if (this.quest.completed) {
+                        questStatusBadge.textContent = "완료 가능";
+                        questStatusBadge.className = "text-[10px] px-2 py-0.5 rounded bg-green-900/60 text-green-300 font-bold animate-pulse";
+                    }
+                } else if (this.quest.id === 'clear') {
+                    document.getElementById('questTitle').textContent = "전설의 수호자";
+                    document.getElementById('questDesc').textContent = "마을을 위협하던 모든 적을 물리치고 수호자가 되었습니다!";
+                    questProgressText.textContent = "평화가 찾아왔습니다.";
+                    questStatusBadge.textContent = "CLEAR";
+                    questStatusBadge.className = "text-[10px] px-2 py-0.5 rounded bg-green-900 text-green-200 font-bold";
+                }
+            }
+
+            checkAttackCollision() {
+                // 공격 사거리 판정 범위 정의
+                let attackRange = 40;
+                let ax = this.player.x;
+                let ay = this.player.y;
+
+                if (this.player.direction === 'up') ay -= attackRange;
+                else if (this.player.direction === 'down') ay += attackRange;
+                else if (this.player.direction === 'left') ax -= attackRange;
+                else if (this.player.direction === 'right') ax += attackRange;
+
+                // 몬스터 피격 확인
+                this.monsters.forEach(m => {
+                    if (m.hp <= 0) return;
+                    let dist = Math.hypot((m.x + m.width/2) - (ax + this.player.width/2), (m.y + m.height/2) - (ay + this.player.height/2));
+                    
+                    if (dist < (attackRange + m.width/2)) {
+                        // 피격 성립! 대미지 계산
+                        let damage = Math.max(1, this.player.atk - m.def);
+                        // 치명타 찬스 (20%)
+                        let isCrit = Math.random() < 0.2;
+                        if (isCrit) {
+                            damage = Math.floor(damage * 1.5);
+                        }
+
+                        m.hp -= damage;
+                        sound.playHit();
+                        
+                        // 붉은색 출혈 파티클 추가
+                        this.addParticle(m.x + m.width/2, m.y + m.height/2, '💥', 5);
+                        // 데미지 플로팅 텍스트
+                        this.addDamageText(m.x + m.width/2, m.y, damage, isCrit ? '#fca5a5' : '#ffffff');
+
+                        // 몬스터 분노: 피격 시 플레이어를 바로 타겟팅
+                        m.targetX = this.player.x;
+                        m.targetY = this.player.y;
+
+                        this.logCombat(`⚔️ ${m.name}에게 ${damage}의 피해를 입혔습니다!${isCrit ? ' (치명타!)' : ''}`);
+
+                        if (m.hp <= 0) {
+                            this.handleMonsterKill(m);
+                        }
+                    }
+                });
+
+                // NPC 대화 트리거 (공격 혹은 다가서서 누름)
+                this.npcs.forEach(npc => {
+                    let dist = Math.hypot((npc.x + 16) - (this.player.x + 16), (npc.y + 16) - (this.player.y + 16));
+                    if (dist < 45) {
+                        this.interactWithNPC(npc);
+                    }
+                });
+            }
+
+            handleMonsterKill(monster) {
+                this.player.gold += monster.gold;
+                this.player.exp += monster.exp;
+                this.logCombat(`💀 ${monster.name}를 쓰러뜨렸습니다! (보상: +${monster.gold}G, +${monster.exp} EXP)`);
+                this.addParticle(monster.x + monster.width/2, monster.y + monster.height/2, '⭐', 8);
+
+                // 퀘스트 카운트
+                if (this.quest.id === 'hunt_slime' && monster.type === 'slime') {
+                    this.quest.count++;
+                    if (this.quest.count >= this.quest.targetCount) {
+                        this.quest.completed = true;
+                        this.logCombat(`📜 [퀘스트] 촌장에게 가서 보고할 준비가 되었습니다!`);
+                    }
+                }
+
+                // 보스 격퇴
+                if (monster.type === 'dragon') {
+                    this.quest.completed = true;
+                    this.logCombat(`🎉 [보스 퇴치] 전설의 붉은용을 쓰러트렸습니다! 드디어 평화가 찾아왔습니다.`);
+                    this.gameState = 'victory';
+                    this.showVictoryScreen();
+                }
+
+                this.checkLevelUp();
+                this.updateUI();
+
+                // 몬스터 리스폰 (보스 제외)
+                if (monster.type !== 'dragon') {
+                    setTimeout(() => {
+                        if (this.gameState === 'playing') {
+                            this.spawnMonster(monster.type);
+                        }
+                    }, 8000);
+                }
+            }
+
+            checkLevelUp() {
+                if (this.player.exp >= this.player.nextExp) {
+                    this.player.exp -= this.player.nextExp;
+                    this.player.level++;
+                    this.player.nextExp = Math.floor(this.player.nextExp * 1.5);
+                    this.player.maxHp += 15;
+                    this.player.hp = this.player.maxHp;
+                    this.player.atk += 4;
+                    this.player.def += 2;
+                    sound.playLevelUp();
+                    this.addParticle(this.player.x + 16, this.player.y + 16, '👑', 10);
+                    this.logCombat(`🎉 [레벨 업] 레벨 ${this.player.level}로 성장했습니다! 모든 체력이 회복되고 능력치가 대폭 증가합니다!`);
+                }
+            }
+
+            interactWithNPC(npc) {
+                if (npc.type === 'elder') {
+                    if (this.quest.id === 'hunt_slime') {
+                        if (!this.quest.completed) {
+                            this.logCombat(`🧙‍♂️ [촌장] "외부 사냥터의 초록 슬라임 3마리를 꼭 물리쳐주게나!"`);
+                        } else if (this.quest.completed && !this.quest.rewarded) {
+                            this.quest.rewarded = true;
+                            this.player.gold += this.quest.rewardGold;
+                            this.player.exp += this.quest.rewardExp;
+                            sound.playQuestDone();
+                            this.logCombat(`🧙‍♂️ [촌장] "오오! 정말 든든하구만! 여기 감사의 선물이네. (+100G, +50 EXP)"`);
+                            
+                            // 다음 퀘스트 진행
+                            this.quest = {
+                                id: 'defeat_dragon',
+                                title: '던전의 공포 격퇴',
+                                desc: '동쪽 깊숙한 고원에 은거하는 거대 보스 붉은용(🐉)을 물리치십시오.',
+                                target: 'dragon',
+                                count: 0,
+                                targetCount: 1,
+                                completed: false,
+                                rewarded: false,
+                                rewardGold: 1000,
+                                rewardExp: 1000
+                            };
+                            this.logCombat(`📜 [퀘스트 갱신] 새로운 임무: "던전의 공포 격퇴"가 활성화되었습니다.`);
+                            this.checkLevelUp();
+                            this.updateUI();
+                        }
+                    } else if (this.quest.id === 'defeat_dragon') {
+                        if (!this.quest.completed) {
+                            this.logCombat(`🧙‍♂️ [촌장] "그 전설의 붉은용은 엄청나게 강하네! 강철 검과 탄탄한 갑옷을 구비해 가야 살아남을 걸세!"`);
+                        }
+                    }
+                } else if (npc.type === 'merchant_sign') {
+                    this.logCombat(`🛒 [상인] "안녕하신가! 최강의 무기점은 오른편 메뉴판 상점 탭을 통해 즉시 거래할 수 있다네!"`);
+                }
+            }
+
+            addParticle(x, y, emoji, count) {
+                for (let i = 0; i < count; i++) {
+                    this.particles.push({
+                        x: x,
+                        y: y,
+                        vx: (Math.random() - 0.5) * 6,
+                        vy: (Math.random() - 0.5) * 6 - 2,
+                        emoji: emoji,
+                        life: 30,
+                        maxLife: 30
+                    });
+                }
+            }
+
+            addDamageText(x, y, text, color) {
+                this.damageTexts.push({
+                    x: x,
+                    y: y,
+                    text: text,
+                    color: color,
+                    life: 40,
+                    vy: -1.2
+                });
+            }
+
+            start() {
+                this.gameState = 'playing';
+                document.getElementById('gameOverlay').classList.add('hidden');
+                
+                // 플레이어 기초 세팅 초기화
+                this.player.hp = this.player.maxHp;
+                this.player.x = 100;
+                this.player.y = 150;
+                this.spawnMonsters();
+                this.updateUI();
+                
+                this.logCombat(`⚔️ 던전 속으로 출발합니다! 촌장 🧙‍♂️을 먼저 찾아가거나 몬스터를 사냥해 보세요.`);
+
+                // 게임 오디오 시작
+                sound.init();
+                if (!sound.muted) {
+                    sound.startBgm();
+                }
+
+                this.gameLoop();
+            }
+
+            showGameOver() {
+                this.gameState = 'gameover';
+                sound.playGameOver();
+                sound.stopBgm();
+                
+                const overlay = document.getElementById('gameOverlay');
+                overlay.classList.remove('hidden');
+                document.getElementById('overlayTitle').textContent = "유 다이 (YOU DIED)";
+                document.getElementById('overlayTitle').classList.add('text-red-500');
+                document.getElementById('overlayDesc').innerHTML = `영웅이 쓰러졌습니다.<br>포션을 사고 공격력 장비를 보강해 다시 모험에 도전해 보세요!`;
+                document.getElementById('startGameBtn').textContent = "부활하기 (다시 시작)";
+            }
+
+            showVictoryScreen() {
+                this.gameState = 'victory';
+                sound.playQuestDone();
+                sound.stopBgm();
+
+                const overlay = document.getElementById('gameOverlay');
+                overlay.classList.remove('hidden');
+                document.getElementById('overlayTitle').textContent = "모험 성공 (VICTORY)";
+                document.getElementById('overlayTitle').classList.add('text-green-400');
+                document.getElementById('overlayDesc').innerHTML = `축하합니다!<br>최종 보스 드래곤을 쓰러뜨리고 왕국의 진정한 수호자가 되었습니다. <br><b class="text-yellow-400">레벨: ${this.player.level} | 전리품 골드: ${this.player.gold}G</b>`;
+                document.getElementById('startGameBtn').textContent = "무한 모드로 계속 즐기기";
+                
+                this.quest.id = 'clear';
+                this.updateUI();
+            }
+
+            update() {
+                if (this.gameState !== 'playing') return;
+
+                // 쿨타임
+                if (this.player.attackCooldown > 0) {
+                    this.player.attackCooldown--;
+                } else {
+                    this.player.isAttacking = false;
+                }
+
+                // 플레이어 이동 로직
+                let dx = 0;
+                let dy = 0;
+
+                if (this.keys['ArrowUp'] || this.keys['KeyW']) { dy = -1; this.player.direction = 'up'; }
+                if (this.keys['ArrowDown'] || this.keys['KeyS']) { dy = 1; this.player.direction = 'down'; }
+                if (this.keys['ArrowLeft'] || this.keys['KeyA']) { dx = -1; this.player.direction = 'left'; }
+                if (this.keys['ArrowRight'] || this.keys['KeyD']) { dx = 1; this.player.direction = 'right'; }
+
+                // 대각선 이동 속도 보정
+                if (dx !== 0 && dy !== 0) {
+                    dx *= 0.7071;
+                    dy *= 0.7071;
+                }
+
+                let nextX = this.player.x + dx * this.player.speed;
+                let nextY = this.player.y + dy * this.player.speed;
+
+                // 맵 경계 충돌 제한
+                if (nextX < 0) nextX = 0;
+                if (nextX > WORLD_WIDTH - this.player.width) nextX = WORLD_WIDTH - this.player.width;
+                if (nextY < 0) nextY = 0;
+                if (nextY > WORLD_HEIGHT - this.player.height) nextY = WORLD_HEIGHT - this.player.height;
+
+                // 지형 장식물/벽 장애물 충돌 검사
+                let collides = false;
+                for (let dec of this.decorations) {
+                    if (this.checkCollision({ x: nextX, y: nextY, width: this.player.width, height: this.player.height }, dec)) {
+                        collides = true;
+                        break;
+                    }
+                }
+
+                if (!collides) {
+                    this.player.x = nextX;
+                    this.player.y = nextY;
+                }
+
+                // 몬스터 AI 업데이트 및 공격 처리
+                this.monsters.forEach(m => {
+                    if (m.hp <= 0) return;
+
+                    m.aiTimer--;
+                    if (m.aiTimer <= 0) {
+                        // 무작위 순찰 혹은 플레이어 추적
+                        let distToPlayer = Math.hypot((this.player.x + 16) - (m.x + m.width/2), (this.player.y + 16) - (m.y + m.height/2));
+                        
+                        if (distToPlayer < 200) { // 플레이어 인식 거리
+                            m.targetX = this.player.x;
+                            m.targetY = this.player.y;
+                            m.aiTimer = 30; // 자주 갱신
+                        } else {
+                            // 단순 순찰 무작위 좌표 설정
+                            m.targetX = m.x + (Math.random() - 0.5) * 120;
+                            m.targetY = m.y + (Math.random() - 0.5) * 120;
+                            // 맵 바깥 정렬 보정
+                            m.targetX = Math.max(200, Math.min(WORLD_WIDTH - 50, m.targetX));
+                            m.targetY = Math.max(50, Math.min(WORLD_HEIGHT - 50, m.targetY));
+                            m.aiTimer = Math.random() * 90 + 60;
+                        }
+                    }
+
+                    // 타겟 방향으로 이동
+                    let angle = Math.atan2(m.targetY - m.y, m.targetX - m.x);
+                    let mdx = Math.cos(angle) * m.speed;
+                    let mdy = Math.sin(angle) * m.speed;
+                    
+                    // 장애물 근처인 경우 회피를 위해 미세하게 오차를 주어 이동시킴
+                    let mNextX = m.x + mdx;
+                    let mNextY = m.y + mdy;
+
+                    // 몬스터 맵 경계 제한
+                    mNextX = Math.max(50, Math.min(WORLD_WIDTH - m.width, mNextX));
+                    mNextY = Math.max(50, Math.min(WORLD_HEIGHT - m.height, mNextY));
+
+                    m.x = mNextX;
+                    m.y = mNextY;
+
+                    // 플레이어 피격 체크 (밀접해지면 공격)
+                    let pDist = Math.hypot((this.player.x + 16) - (m.x + m.width/2), (this.player.y + 16) - (m.y + m.height/2));
+                    if (pDist < (m.width/2 + 20)) {
+                        // 피해 주기 (1초에 한두 번꼴로 피해가 누적되도록 쿨타임 조정)
+                        if (Math.random() < 0.02) {
+                            let dmg = Math.max(1, m.atk - this.player.def);
+                            this.player.hp -= dmg;
+                            sound.playHit();
+                            this.addParticle(this.player.x + 16, this.player.y + 16, '🩸', 4);
+                            this.addDamageText(this.player.x + 16, this.player.y, dmg, '#ef4444');
+                            this.logCombat(`💥 [피격] ${m.name}의 습격을 받아 ${dmg}의 피해를 입었습니다.`);
+                            this.updateUI();
+
+                            if (this.player.hp <= 0) {
+                                this.showGameOver();
+                            }
+                        }
+                    }
+                });
+
+                // 파티클 수명 감소 및 소멸
+                this.particles.forEach(p => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy += 0.15; // 중력
+                    p.life--;
+                });
+                this.particles = this.particles.filter(p => p.life > 0);
+
+                // 대미지 텍스트 갱신
+                this.damageTexts.forEach(dt => {
+                    dt.y += dt.vy;
+                    dt.life--;
+                });
+                this.damageTexts = this.damageTexts.filter(dt => dt.life > 0);
+            }
+
+            checkCollision(rect1, rect2) {
+                return rect1.x < rect2.x + rect2.width &&
+                       rect1.x + rect1.width > rect2.x &&
+                       rect1.y < rect2.y + rect2.height &&
+                       rect1.y + rect1.height > rect2.y;
+            }
+
+            draw() {
+                // 화면 초기화
+                this.ctx.fillStyle = '#1e293b'; // 던전 바닥 타일 색상 느낌
+                this.ctx.fillRect(0, 0, VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
+
+                // 카메라 뷰포트 오프셋 계산 (플레이어를 중심에 맞추기)
+                let camX = this.player.x + 16 - VIEWPORT_WIDTH / 2;
+                let camY = this.player.y + 16 - VIEWPORT_HEIGHT / 2;
+
+                // 맵 경계 기준으로 카메라 제한
+                camX = Math.max(0, Math.min(WORLD_WIDTH - VIEWPORT_WIDTH, camX));
+                camY = Math.max(0, Math.min(WORLD_HEIGHT - VIEWPORT_HEIGHT, camY));
+
+                // 격자 바닥 타일 그리기 (스크롤 체감용)
+                this.ctx.strokeStyle = '#334155';
+                this.ctx.lineWidth = 1;
+                const gridSize = 40;
+                const startGridX = Math.floor(camX / gridSize) * gridSize;
+                const startGridY = Math.floor(camY / gridSize) * gridSize;
+                
+                for (let x = startGridX; x < startGridX + VIEWPORT_WIDTH + gridSize; x += gridSize) {
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(x - camX, 0);
+                    this.ctx.lineTo(x - camX, VIEWPORT_HEIGHT);
+                    this.ctx.stroke();
+                }
+                for (let y = startGridY; y < startGridY + VIEWPORT_HEIGHT + gridSize; y += gridSize) {
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(0, y - camY);
+                    this.ctx.lineTo(VIEWPORT_WIDTH, y - camY);
+                    this.ctx.stroke();
+                }
+
+                // 마을 바닥 구분선 (초록색 흙 느낌)
+                this.ctx.fillStyle = '#14532d';
+                this.ctx.fillRect(0 - camX, 0 - camY, 380, WORLD_HEIGHT);
+
+                // 장식물 (나무 🌲, 돌 🪨) 그리기
+                this.ctx.font = '24px sans-serif';
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+                this.decorations.forEach(dec => {
+                    this.ctx.fillText(dec.emoji, dec.x + 15 - camX, dec.y + 15 - camY);
+                });
+
+                // NPC 그리기
+                this.npcs.forEach(npc => {
+                    this.ctx.font = '26px sans-serif';
+                    this.ctx.fillText(npc.emoji, npc.x + 16 - camX, npc.y + 16 - camY);
+                    
+                    // NPC 이름 라벨
+                    this.ctx.font = 'bold 11px Noto Sans KR';
+                    this.ctx.fillStyle = '#fef08a';
+                    this.ctx.fillText(npc.name, npc.x + 16 - camX, npc.y - 12 - camY);
+                });
+
+                // 몬스터 그리기
+                this.monsters.forEach(m => {
+                    if (m.hp <= 0) return;
+
+                    // 피격/생명 게이지
+                    let hpRatio = m.hp / m.maxHp;
+                    this.ctx.fillStyle = '#ef4444';
+                    this.ctx.fillRect(m.x - camX, m.y - 10 - camY, m.width, 4);
+                    this.ctx.fillStyle = '#22c55e';
+                    this.ctx.fillRect(m.x - camX, m.y - 10 - camY, m.width * hpRatio, 4);
+
+                    // 몬스터 이모지
+                    this.ctx.font = `${m.width - 6}px sans-serif`;
+                    this.ctx.fillText(m.emoji, m.x + m.width/2 - camX, m.y + m.height/2 - camY);
+
+                    // 몬스터 이름
+                    this.ctx.font = '10px Noto Sans KR';
+                    this.ctx.fillStyle = '#cbd5e1';
+                    this.ctx.fillText(m.name, m.x + m.width/2 - camX, m.y - 18 - camY);
+                });
+
+                // 플레이어 무기 공격 이펙트
+                if (this.player.isAttacking) {
+                    this.ctx.fillStyle = 'rgba(254, 240, 138, 0.4)';
+                    this.ctx.beginPath();
+                    let arcX = this.player.x + 16 - camX;
+                    let arcY = this.player.y + 16 - camY;
+                    let startAngle = 0;
+                    let endAngle = Math.PI * 2;
+
+                    if (this.player.direction === 'up') { arcY -= 15; startAngle = Math.PI; endAngle = 0; }
+                    else if (this.player.direction === 'down') { arcY += 15; startAngle = 0; endAngle = Math.PI; }
+                    else if (this.player.direction === 'left') { arcX -= 15; startAngle = Math.PI/2; endAngle = 3*Math.PI/2; }
+                    else if (this.player.direction === 'right') { arcX += 15; startAngle = 3*Math.PI/2; endAngle = Math.PI/2; }
+
+                    this.ctx.arc(arcX, arcY, 28, startAngle, endAngle);
+                    this.ctx.fill();
+                }
+
+                // 플레이어 그리기 (레벨 업 이펙트에 영향)
+                this.ctx.font = '28px sans-serif';
+                let playerEmoji = this.player.hp > 0 ? '🛡️' : '💀';
+                this.ctx.fillText(playerEmoji, this.player.x + 16 - camX, this.player.y + 16 - camY);
+                
+                // 플레이어 위에 닉네임
+                this.ctx.font = 'bold 11px Noto Sans KR';
+                this.ctx.fillStyle = '#fbbf24';
+                this.ctx.fillText('나의 영웅', this.player.x + 16 - camX, this.player.y - 14 - camY);
+
+                // 파티클 효과 드로잉
+                this.particles.forEach(p => {
+                    this.ctx.font = '16px sans-serif';
+                    this.ctx.globalAlpha = p.life / p.maxLife;
+                    this.ctx.fillText(p.emoji, p.x - camX, p.y - camY);
+                });
+                this.ctx.globalAlpha = 1.0; // 복구
+
+                // 대미지 숫자 드로잉
+                this.damageTexts.forEach(dt => {
+                    this.ctx.font = 'bold 16px Noto Sans KR';
+                    this.ctx.fillStyle = dt.color;
+                    this.ctx.fillText(dt.text, dt.x - camX, dt.y - camY);
+                });
+            }
+
+            gameLoop() {
+                if (this.gameState !== 'playing') return;
+
+                this.update();
+                this.draw();
+
+                requestAnimationFrame(() => this.gameLoop());
+            }
+        }
+
+        // 게임 초기 인스턴스 생성
+        const game = new Game();
+
+        // 시작 버튼 이벤트 등록
+        document.getElementById('startGameBtn').addEventListener('click', () => {
+            game.start();
+        });
+    </script>
+</body>
+</html>
